@@ -1,0 +1,59 @@
+= Changelog
+:toc: left
+:toc-title: Versions
+
+All notable changes to `aloli-crystal/totp` are documented
+here. The format follows
+https://keepachangelog.com/1.1.0/[Keep a Changelog] and
+versioning follows https://semver.org/[SemVer]
+(3-digit for creations, 4-digit for ports of Ruby gems).
+
+== v0.1.0 — 2026-09-26
+
+=== Added
+
+* `TOTP::HOTP` — counter-based one-time passwords, RFC 4226.
+* `TOTP::Authenticator` — time-based one-time passwords, RFC 6238, on SHA-1,
+  SHA-256 or SHA-512; code generation, verification with a clock-drift window,
+  `seconds_remaining`, and `otpauth://` provisioning URIs.
+* `TOTP::Base32` — RFC 4648 encoding and decoding, plus `format_for_display`
+  for manual entry.
+* `TOTP.generate_secret` and `.generate_secret_base32`, from the system CSPRNG.
+
+=== Conformance
+
+Pinned to the published test vectors, which are the only judge that matters:
+an implementation agreeing with itself but not with the RFC agrees with no
+authenticator app either.
+
+* All ten HOTP counters of RFC 4226 Appendix D.
+* All eighteen TOTP values of RFC 6238 Appendix B — six times × three
+  algorithms.
+* The seven base32 vectors of RFC 4648 §10.
+
+=== Design notes
+
+* *`verify` returns the matched counter, not a boolean.* A one-time password
+  is only one-time if the caller stores it and refuses anything at or below it
+  next time — pass it back as `after`. Returning a boolean would have made
+  that easy to skip.
+* Codes are compared in constant time, and every candidate in the drift window
+  is checked, so neither the answer nor how long it took reveals which step
+  matched.
+* Secrets below 128 bits are refused, as are digit counts outside RFC 4226's
+  6-to-8 range.
+* Base32 decoding accepts lowercase, spaces, hyphens and missing padding —
+  what a user actually retypes — but refuses any character outside the
+  alphabet, and any string ending mid-byte.
+* The colon in a provisioning label stays literal while both halves are
+  percent-encoded: encoding it would stop apps splitting issuer from account.
+  Query parameters use `%20`, never `+`, which a strict URI reader takes
+  literally.
+
+=== Notes
+
+* *SHA-1 is the default and, in practice, the only portable choice.* Google
+  Authenticator and most clones ignore the `algorithm` parameter and always
+  compute SHA-1.
+* TOTP is the second factor of a password, not of a passkey — see
+  `aloli-crystal/webauthn`.

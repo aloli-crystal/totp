@@ -1,0 +1,113 @@
+= aloli-crystal/totp
+:toc: left
+:toc-title: Sommaire
+
+TOTP et HOTP (RFC 6238 et RFC 4226) pour Crystal, avec base32 RFC 4648 et URI de provisionnement otpauth.
+
+== Pourquoi
+
+Le second facteur d'un *mot de passe*. Pas d'une passkey : un authentificateur
+qui vérifie l'utilisateur a déjà prouvé la possession de l'appareil et la
+connaissance de ce qui le déverrouille, en un seul geste. Y ajouter un code à
+six chiffres coûte de l'ergonomie et n'apporte rien.
+
+Rien dans l'écosystème Crystal ne fournissait TOTP, d'où ce shard.
+
+== Ce qu'il fait
+
+* *HOTP* (RFC 4226) — codes fondés sur un compteur.
+* *TOTP* (RFC 6238) — codes fondés sur l'horloge, en SHA-1, SHA-256 ou SHA-512.
+* *Base32* (RFC 4648) — l'encodage sous lequel les applications stockent un secret.
+* *URI de provisionnement `otpauth://`* — le contenu du QR code que l'utilisateur scanne.
+
+La conformité est verrouillée sur les vecteurs de test publiés : les dix
+compteurs HOTP de l'annexe D de la RFC 4226, et les dix-huit valeurs TOTP de
+l'annexe B de la RFC 6238 (six instants × trois algorithmes).
+
+[NOTE]
+====
+*SHA-1 est le défaut, et en pratique le seul choix portable.* Google
+Authenticator et la plupart de ses clones ignorent le paramètre `algorithm`
+d'une URI de provisionnement et calculent toujours du SHA-1. Choisir SHA-256 ou
+SHA-512, c'est s'engager sur les applications qui l'honorent — et exclure
+silencieusement les autres.
+====
+
+== Installation
+
+[source,yaml]
+----
+dependencies:
+  totp:
+    github: aloli-crystal/totp
+    version: "~> 0.1"
+----
+
+== Démarrage rapide
+
+[source,crystal]
+----
+require "totp"
+
+# --- Enrôlement -------------------------------------------------------
+secret = TOTP.generate_secret          # 20 octets tirés du CSPRNG système
+auth = TOTP::Authenticator.new(secret)
+
+# À afficher en QR code ; stocker `secret` en face de l'utilisateur.
+auth.provisioning_uri(account: "alice@example.com", issuer: "ACME Co")
+# => otpauth://totp/ACME%20Co:alice%40example.com?secret=...&algorithm=SHA1&digits=6&period=30
+
+# Ou à présenter pour une saisie manuelle.
+TOTP::Base32.format_for_display(auth.secret_base32)   # => "GEZD GNBV GY3T QOJQ ..."
+
+# --- Connexion --------------------------------------------------------
+if counter = auth.verify(code_soumis, after: user.last_otp_counter)
+  user.last_otp_counter = counter
+  user.save
+else
+  # refusé
+end
+----
+
+*`verify` renvoie le compteur, pas un booléen, et ce n'est pas anodin.* Un mot
+de passe à usage unique ne l'est que si l'appelant stocke ce compteur et refuse
+ensuite tout ce qui lui est inférieur ou égal — à repasser en `after`. Ignorez-le,
+et le code reste rejouable pendant toute la fenêtre de dérive.
+
+`drift` accepte les codes situés à ce nombre de pas de part et d'autre de
+l'instant courant, pour absorber l'écart d'horloge entre le serveur et
+l'appareil. Un pas — 30 secondes — est le compromis habituel ; l'élargir élargit
+la fenêtre pendant laquelle un code intercepté reste utilisable.
+
+
+== Statut
+
+* *Version* : voir https://github.com/aloli-crystal/totp/releases[releases GitHub]
+* *Branche par défaut* : `production`
+* *Licence* : MIT (voir `LICENSE`)
+
+== Documentation
+
+* https://aloli-crystal.github.io/totp/[Site documentaire Antora] (à venir)
+* `CHANGELOG.fr.adoc` — historique des versions
+* `CHANGELOG.adoc` — version anglaise
+
+== Conventions ALOLI
+
+Ce shard suit les conventions de l'écosystème
+https://github.com/aloli-crystal[aloli-crystal/*] :
+
+* Constante `VERSION` lue au compile-time depuis `shard.yml` —
+  pas de désynchro possible.
+* CLI : `totp help [<sub>]` (équivalent UX standard de
+  `--help` + focus par sous-commande).
+* Branche par défaut `production` (pas `main`).
+* Versioning SemVer 3-chiffres pour création, 4-chiffres pour
+  portage de gem Ruby.
+
+Pour démarrer un nouveau shard avec ces conventions :
+https://github.com/aloli-crystal/shard-template[aloli-crystal/shard-template].
+
+== Licence
+
+MIT — voir `LICENSE`.

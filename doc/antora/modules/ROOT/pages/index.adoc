@@ -1,0 +1,22 @@
+= totp
+:description: TOTP et HOTP (RFC 6238 et RFC 4226) pour Crystal, avec base32 RFC 4648 et URI de provisionnement otpauth.
+
+TOTP et HOTP (RFC 6238 et RFC 4226) pour Crystal, avec base32 RFC 4648 et URI de provisionnement otpauth.
+
+== Statut
+
+* *Version* : {page-component-display-version}
+* *Repo* : https://github.com/aloli-crystal/totp[aloli-crystal/totp]
+* *Licence* : MIT
+
+== Quickstart
+
+[source,crystal]
+----
+require "totp"
+
+# … exemple d'utilisation …
+----
+
+Pour les détails, voir xref:usage.adoc[Utilisation] ou
+xref:api.adoc[API].

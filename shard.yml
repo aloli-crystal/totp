@@ -1,0 +1,19 @@
+name: totp
+version: 0.1.0
+
+description: |
+  TOTP and HOTP (RFC 6238 and RFC 4226) for Crystal: one-time password
+  generation and verification, RFC 4648 base32, and otpauth:// provisioning
+  URIs. SHA-1, SHA-256 and SHA-512.
+
+authors:
+  - Philippe Nénert <philippe@aloli.fr>
+
+crystal: ">= 1.19.0"
+
+license: MIT
+
+development_dependencies:
+  ameba:
+    github: crystal-ameba/ameba
+    version: "~> 1.6"

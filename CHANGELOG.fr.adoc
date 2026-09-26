@@ -1,0 +1,60 @@
+= Changelog
+:toc: left
+:toc-title: Versions
+
+Toutes les modifications notables de `aloli-crystal/totp`
+sont documentées ici. Le format suit
+https://keepachangelog.com/1.1.0/[Keep a Changelog] et le
+versioning suit https://semver.org/[SemVer]
+(3 chiffres pour création, 4 pour portage de gem Ruby).
+
+== v0.1.0 — 2026-09-26
+
+=== Ajouté
+
+* `TOTP::HOTP` — mots de passe à usage unique fondés sur un compteur, RFC 4226.
+* `TOTP::Authenticator` — mots de passe à usage unique fondés sur l'horloge,
+  RFC 6238, en SHA-1, SHA-256 ou SHA-512 ; génération, vérification avec
+  fenêtre de dérive d'horloge, `seconds_remaining` et URI de provisionnement
+  `otpauth://`.
+* `TOTP::Base32` — encodage et décodage RFC 4648, plus `format_for_display`
+  pour la saisie manuelle.
+* `TOTP.generate_secret` et `.generate_secret_base32`, depuis le CSPRNG système.
+
+=== Conformité
+
+Verrouillée sur les vecteurs de test publiés, seul juge qui compte : une
+implémentation qui s'accorde avec elle-même mais pas avec la RFC ne s'accorde
+avec aucune application d'authentification.
+
+* Les dix compteurs HOTP de l'annexe D de la RFC 4226.
+* Les dix-huit valeurs TOTP de l'annexe B de la RFC 6238 — six instants ×
+  trois algorithmes.
+* Les sept vecteurs base32 du §10 de la RFC 4648.
+
+=== Choix de conception
+
+* *`verify` renvoie le compteur trouvé, pas un booléen.* Un mot de passe à
+  usage unique ne l'est que si l'appelant le stocke et refuse ensuite tout ce
+  qui lui est inférieur ou égal — à repasser en `after`. Un booléen aurait
+  rendu cet oubli facile.
+* Les codes sont comparés en temps constant, et tous les candidats de la
+  fenêtre de dérive sont éprouvés : ni le résultat ni sa durée ne révèlent quel
+  pas a concordé.
+* Les secrets de moins de 128 bits sont refusés, tout comme les nombres de
+  chiffres hors de la plage 6 à 8 de la RFC 4226.
+* Le décodage base32 accepte minuscules, espaces, tirets et absence de
+  remplissage — ce qu'un utilisateur retape réellement — mais refuse tout
+  caractère hors alphabet et toute chaîne s'arrêtant au milieu d'un octet.
+* Le deux-points du label de provisionnement reste littéral tandis que ses deux
+  moitiés sont encodées : l'encoder empêcherait les applications de séparer
+  l'émetteur du compte. Les paramètres de requête utilisent `%20`, jamais `+`,
+  qu'un lecteur d'URI strict prend au pied de la lettre.
+
+=== Notes
+
+* *SHA-1 est le défaut et, en pratique, le seul choix portable.* Google
+  Authenticator et la plupart de ses clones ignorent le paramètre `algorithm`
+  et calculent toujours du SHA-1.
+* TOTP est le second facteur d'un mot de passe, pas d'une passkey — voir
+  `aloli-crystal/webauthn`.
