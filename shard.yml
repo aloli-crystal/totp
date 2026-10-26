@@ -1,5 +1,5 @@
 name: totp
-version: 0.1.0
+version: 0.1.1
 
 description: |
   TOTP and HOTP (RFC 6238 and RFC 4226) for Crystal: one-time password
